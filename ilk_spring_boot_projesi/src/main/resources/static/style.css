@@ -1,0 +1,27 @@
+body {
+    font-family: sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+#urunListesi {
+    list-style: none;
+    padding: 0;
+}
+
+#urunListesi li {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#urunListesi li span {
+    flex-grow: 1;
+    margin-right: 10px;
+}

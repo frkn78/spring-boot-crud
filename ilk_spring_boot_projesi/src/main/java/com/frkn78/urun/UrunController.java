@@ -1,5 +1,6 @@
 package com.frkn78.urun;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,45 +16,43 @@ public class UrunController {
     private List<Urun> urunler = new ArrayList<>();
     private long nextId = 1;
 
-    @GetMapping // Tüm ürünleri listeleme (GET /api/urunler)
+    @Autowired
+    private UrunRepository urunRepository;
+
+    @GetMapping
     public List<Urun> getAllUrunler() {
-        return urunler;
+        return urunRepository.findAll();
     }
 
-    @GetMapping("/{id}") // Belirli bir ürünü getirme (GET /api/urunler/{id})
+    @GetMapping("/{id}")
     public ResponseEntity<Urun> getUrunById(@PathVariable Long id) {
-        Optional<Urun> urun = urunler.stream().filter(u -> u.getId().equals(id)).findFirst();
-        if (urun.isPresent()) {
-            return new ResponseEntity<>(urun.get(), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        Optional<Urun> urun = urunRepository.findById(id);
+        return urun.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @PostMapping // Yeni bir ürün oluşturma (POST /api/urunler)
+    @PostMapping
     public ResponseEntity<Urun> createUrun(@RequestBody Urun urun) {
-        urun.setId(nextId++);
-        urunler.add(urun);
-        return new ResponseEntity<>(urun, HttpStatus.CREATED);
+        Urun kaydedilenUrun = urunRepository.save(urun);
+        return new ResponseEntity<>(kaydedilenUrun, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}") // Mevcut bir ürünü güncelleme (PUT /api/urunler/{id})
+    @PutMapping("/{id}")
     public ResponseEntity<Urun> updateUrun(@PathVariable Long id, @RequestBody Urun guncellenenUrun) {
-        Optional<Urun> existingUrun = urunler.stream().filter(u -> u.getId().equals(id)).findFirst();
-        if (existingUrun.isPresent()) {
-            Urun urun = existingUrun.get();
-            urun.setAd(guncellenenUrun.getAd());
-            urun.setFiyat(guncellenenUrun.getFiyat());
-            return new ResponseEntity<>(urun, HttpStatus.OK);
+        Optional<Urun> mevcutUrun = urunRepository.findById(id);
+        if (mevcutUrun.isPresent()) {
+            guncellenenUrun.setId(id); // Güncellenecek ürünün ID'sini ayarla
+            Urun kaydedilenUrun = urunRepository.save(guncellenenUrun);
+            return new ResponseEntity<>(kaydedilenUrun, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
-    @DeleteMapping("/{id}") // Bir ürünü silme (DELETE /api/urunler/{id})
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUrun(@PathVariable Long id) {
-        boolean removed = urunler.removeIf(u -> u.getId().equals(id));
-        if (removed) {
+        if (urunRepository.existsById(id)) {
+            urunRepository.deleteById(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
